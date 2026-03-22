@@ -49,7 +49,16 @@ export default function RegisterConferencePage() {
   };
 
   const handleInputChange = (code: string, value: string | string[]) => {
-    setFormValues((prev) => ({ ...prev, [code]: value }));
+    setFormValues((prev) => {
+      const next = { ...prev, [code]: value };
+      const allInputs = formGroups.flatMap((g) => g.inputs);
+      const catInput = allInputs.find(({ input }) => /^category$/i.test(input.nameEnglish));
+      if (catInput && code === catInput.input.inputcode && value !== 'LOC') {
+        const subCatInput = allInputs.find(({ input }) => /sub.?category/i.test(input.nameEnglish));
+        if (subCatInput) delete next[subCatInput.input.inputcode];
+      }
+      return next;
+    });
     if (fieldErrors[code]) setFieldErrors((prev) => { const e = { ...prev }; delete e[code]; return e; });
   };
 
@@ -70,6 +79,12 @@ export default function RegisterConferencePage() {
 
     currentGroup.inputs.forEach(({ input }) => {
       if (input.is_mandatory !== 'YES') return;
+
+      if (/sub.?category/i.test(input.nameEnglish)) {
+        const catInput = currentGroup.inputs.find(({ input: inp }) => /^category$/i.test(inp.nameEnglish));
+        const catValue = catInput ? formValues[catInput.input.inputcode] : '';
+        if (catValue !== 'LOC') return;
+      }
 
       if (isImageField(input.nameEnglish)) {
         if (!fileValues[input.inputcode]) {
@@ -354,7 +369,16 @@ export default function RegisterConferencePage() {
 
                   {/* Fields */}
                   <div className="space-y-5">
-                    {formGroups[currentStep]?.inputs.map(({ input, options, value }) => (
+                    {formGroups[currentStep]?.inputs.map(({ input, options, value }) => {
+                      const isSubCategory = /sub.?category/i.test(input.nameEnglish);
+                      if (isSubCategory) {
+                        const catInput = formGroups[currentStep]?.inputs.find(
+                          ({ input: inp }) => /^category$/i.test(inp.nameEnglish)
+                        );
+                        const catValue = catInput ? formValues[catInput.input.inputcode] : '';
+                        if (catValue !== 'LOC') return null;
+                      }
+                      return (
                       <div key={input.inputcode}>
                         {input.inputtype.id !== 17 && (
                           <label htmlFor={input.inputcode} className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -364,7 +388,8 @@ export default function RegisterConferencePage() {
                         )}
                         {renderInput(input, options, value)}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Navigation */}

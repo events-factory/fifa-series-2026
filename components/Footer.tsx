@@ -4,8 +4,8 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/50">
           <div className="flex gap-6">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Use</a>
+            <a href="https://smartevent.rw/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="https://smartevent.rw/terms-of-use" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Terms of Use</a>
           </div>
           <div>© {new Date().getFullYear()} FIFA Series. All rights reserved.</div>
         </div>
