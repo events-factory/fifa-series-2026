@@ -15,6 +15,45 @@ function isImageField(name: string) {
   return /picture|photo|image|photo/i.test(name);
 }
 
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1024;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          const ratio = Math.min(MAX / width, MAX / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function fileToRawBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] || result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function RegisterConferencePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -139,23 +178,23 @@ export default function RegisterConferencePage() {
       const formData = new FormData();
       const delegateData: Array<{ input_code: string; input_type: string; input_value: string; input_name: string }> = [];
 
-      formGroups.forEach((group) => {
-        group.inputs.forEach(({ input }) => {
-          if (isImageField(input.nameEnglish)) {
+      for (const group of formGroups) {
+        for (const { input } of group.inputs) {
+          const isFile = isImageField(input.nameEnglish) || input.inputtype.id === 7 || input.inputtype.id === 6;
+          if (isFile) {
             const file = fileValues[input.inputcode];
             if (file) {
-              // Append actual file to FormData
-              formData.append(input.inputcode, file, file.name);
-              formData.append('profile_picture', file, file.name);
-              // Also register in delegate_data so the API tracks it
+              const base64 = input.inputtype.id === 6
+                ? await fileToRawBase64(file)
+                : await compressImage(file);
               delegateData.push({
                 input_code: input.inputcode,
                 input_type: String(input.inputtype.id),
-                input_value: file.name,
+                input_value: base64,
                 input_name: input.nameEnglish,
               });
             }
-            return;
+            continue;
           }
           const value = formValues[input.inputcode];
           if (value) {
@@ -165,8 +204,8 @@ export default function RegisterConferencePage() {
             if (input.inputcode === 'input_id_21576') formData.append('first_name', valueStr);
             if (input.inputcode === 'input_id_35129') formData.append('last_name', valueStr);
           }
-        });
-      });
+        }
+      }
 
       formData.append('delegate_data', JSON.stringify(delegateData));
       formData.append('ticket_id', String(selectedCategory.id));
@@ -178,6 +217,18 @@ export default function RegisterConferencePage() {
       formData.append('payment_token', '');
       formData.append('payment_session', '');
       formData.append('acknowleadgment', '');
+
+      // Log the request being sent
+      const logEntries: Record<string, string> = {};
+      formData.forEach((v, k) => {
+        logEntries[k] = typeof v === 'string'
+          ? (v.length > 200 ? v.substring(0, 200) + `... (${v.length} chars)` : v)
+          : `[File: ${(v as File).name}]`;
+      });
+      console.log('[Submit Registration] FormData:', logEntries);
+      console.log('[Submit Registration] delegate_data items:', delegateData.map(d => ({
+        code: d.input_code, type: d.input_type, name: d.input_name, valueLen: d.input_value.length,
+      })));
 
       const response = await registrationApi.submitRegistration(formData);
       if (response.success) {
