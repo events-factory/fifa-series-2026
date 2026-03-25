@@ -347,137 +347,23 @@ export default function RegisterConferencePage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
-      <div className="flex-1 px-4 py-6 sm:py-10">
-          <div className="max-w-2xl mx-auto">
-            {/* Page title */}
-            <div className="mb-6">
-              <h1 className="text-xl sm:text-2xl font-bold text-primary-700">FIFA Series Rwanda Registration</h1>
-              <p className="text-gray-500 text-sm mt-1">Complete the form below to secure your spot</p>
-            </div>
-
-            {loading ? (
-              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-                <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-3" />
-                <p className="text-gray-400 text-sm">Loading form...</p>
-              </div>
-            ) : error ? (
-              <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-                <p className="text-red-500 text-sm mb-4">{error}</p>
-                <button onClick={loadPage} className="px-5 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-medium hover:bg-primary-600 transition-colors">Try Again</button>
-              </div>
-            ) : selectedCategory && (
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                {/* Step tabs */}
-                {totalSteps > 1 && (
-                  <div className="flex border-b border-gray-100">
-                    {formGroups.map((group, index) => (
-                      <button
-                        key={group.group.id}
-                        type="button"
-                        onClick={() => { if (index < currentStep) setCurrentStep(index); }}
-                        className={`flex-1 py-3.5 text-xs sm:text-sm font-semibold transition-colors border-b-2 ${
-                          index === currentStep
-                            ? 'border-primary-600 text-primary-700 bg-primary-50'
-                            : index < currentStep
-                              ? 'border-transparent text-primary-400 hover:text-primary-600'
-                              : 'border-transparent text-gray-400 cursor-default'
-                        }`}
-                      >
-                        <span className="hidden sm:inline">{group.group.name}</span>
-                        <span className="sm:hidden">Step {index + 1}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Progress bar */}
-                {totalSteps > 1 && (
-                  <div className="h-1 bg-gray-100">
-                    <div
-                      className="h-1 bg-primary-600 transition-all duration-300"
-                      style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
-                    />
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="p-5 sm:p-7">
-                  {/* Step label on mobile */}
-                  {totalSteps > 1 && (
-                    <p className="text-xs text-gray-400 mb-4 sm:hidden">
-                      Step {currentStep + 1} of {totalSteps} — {formGroups[currentStep]?.group.name}
-                    </p>
-                  )}
-
-                  {/* Errors */}
-                  {formErrors.length > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
-                      <p className="text-sm font-semibold text-red-700 mb-1">Please fix the following:</p>
-                      <ul className="text-red-600 text-sm space-y-0.5 list-disc list-inside">
-                        {formErrors.map((err, i) => <li key={i}>{err}</li>)}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Fields */}
-                  <div className="space-y-5">
-                    {formGroups[currentStep]?.inputs.map(({ input, options, value }) => {
-                      const isSubCategory = /sub.?category/i.test(input.nameEnglish);
-                      if (isSubCategory) {
-                        const catInput = formGroups[currentStep]?.inputs.find(
-                          ({ input: inp }) => /^category$/i.test(inp.nameEnglish)
-                        );
-                        const catValue = catInput ? formValues[catInput.input.inputcode] : '';
-                        if (catValue !== 'LOC') return null;
-                      }
-                      return (
-                      <div key={input.inputcode}>
-                        {input.inputtype.id !== 17 && (
-                          <label htmlFor={input.inputcode} className="block text-sm font-medium text-gray-700 mb-1.5">
-                            {input.nameEnglish}
-                            {input.is_mandatory === 'YES' && <span className="text-red-500 ml-1">*</span>}
-                          </label>
-                        )}
-                        {renderInput(input, options, value)}
-                      </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="mt-7 pt-5 border-t border-gray-100 flex items-center gap-3">
-                    {currentStep > 0 && (
-                      <button type="button" onClick={prevStep} className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors whitespace-nowrap">
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                        Previous
-                      </button>
-                    )}
-
-                    {!isLastStep ? (
-                      <button type="button" onClick={nextStep} className="flex items-center justify-center gap-1.5 flex-1 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-bold hover:bg-primary-600 transition-colors">
-                        Next
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                      </button>
-                    ) : (
-                      <button type="submit" disabled={submitting} className="flex items-center justify-center gap-2 flex-1 sm:flex-none sm:px-6 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-bold hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap min-w-0">
-                        {submitting ? (
-                          <>
-                            <svg className="animate-spin w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
-                            <span>Submitting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Submit</span>
-                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </div>
-            )}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm overflow-hidden text-center">
+          <div className="bg-primary-700 px-8 py-6">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">FIFA Series Rwanda Registration</h1>
           </div>
+          <div className="px-8 py-10">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mx-auto mb-5">
+              <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+              </svg>
+            </div>
+            <p className="text-gray-700 text-lg font-semibold mb-2">This link has been closed.</p>
+            <p className="text-gray-400 text-sm">Registration is no longer available.</p>
+          </div>
+        </div>
       </div>
+
 
       <Footer />
     </div>
