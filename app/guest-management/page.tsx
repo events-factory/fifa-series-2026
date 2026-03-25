@@ -9,7 +9,7 @@ import { registrationApi, RegistrationCategory, FormInputGroup } from '@/lib/api
 type AttendanceType = 'PHYSICAL' | 'VIRTUAL';
 interface FormValues { [key: string]: string | string[]; }
 
-const NOC_CATEGORY_ID = 192;
+const NOC_CATEGORY_ID = 193;
 
 function isImageField(name: string) {
   return /picture|photo|image|photo/i.test(name);
@@ -54,7 +54,7 @@ function fileToRawBase64(file: File): Promise<string> {
   });
 }
 
-export default function MobilisationPage() {
+export default function GuestManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attendanceType, setAttendanceType] = useState<AttendanceType | null>(null);
@@ -80,7 +80,7 @@ export default function MobilisationPage() {
       setAttendanceType(type);
       const formResponse = await registrationApi.getCategoryForm(NOC_CATEGORY_ID, type);
       setFormGroups(formResponse.data || []);
-      setSelectedCategory({ id: NOC_CATEGORY_ID, name_english: 'NOC', name_french: 'NOC', fee: 'USD 0', early_payment_date: '', end_date: '' });
+      setSelectedCategory({ id: NOC_CATEGORY_ID, name_english: 'Guest Management', name_french: 'Guest Management', fee: 'USD 0', early_payment_date: '', end_date: '' });
     } catch {
       setError('Failed to load registration form. Please try again.');
     }
